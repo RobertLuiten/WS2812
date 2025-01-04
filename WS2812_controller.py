@@ -100,7 +100,7 @@ class WS2812:
         b = self.RANDOM(0, 255)
         self.set_pixel(i,(r, g, b))
         
-    def set_all_same(self, color: (int, int, int)):
+    def set_all_solid(self, color: (int, int, int)):
         """
         Sets all pixels to the same color.
         
@@ -113,7 +113,7 @@ class WS2812:
         
     def set_all_off(self):
         """Sets all lights in the strip to off."""
-        self.set_all_same((0, 0, 0))
+        self.set_all_solid((0, 0, 0))
         self.refresh()
         
     def set_all_random(self):
@@ -123,6 +123,13 @@ class WS2812:
         """
         for i in range(len(self.AR)):
             self.set_pixel_random(i)
+            
+    def set_all_random_solid(self):
+        """Sets all pixels to the same random color."""
+        r = self.RANDOM(0, 255)
+        g = self.RANDOM(0, 255)
+        b = self.RANDOM(0, 255)
+        set_all_solid((r,g,b),length, int)
             
     def set_section(self, colors: List[[(int, int, int), None]], index: int = 0):
         """
@@ -140,7 +147,7 @@ class WS2812:
                 
     def set_section_solid(self, color: (int, int, int), length: int, index: int = 0):
         """
-        Fills a section of the strip with random colors
+        Fills a section of the strip with random colors.
         
         Args:
         color ((int, int, int)): The color to set the section to.
@@ -153,7 +160,7 @@ class WS2812:
                 
     def set_section_random(self, length: int, index: int = 0):
         """
-        Fills a section of the strip with random colors
+        Fills a section of the strip with random colors.
         
         Args:
         length (int): The length of the section.
@@ -162,6 +169,20 @@ class WS2812:
         """
         for i in range(length):
             self.set_pixel_random(index + i)
+            
+    def set_section_random_solid(self, length: int, index: int = 0):
+        """
+        Sets a section to a solid random color.
+        
+        Args:
+        length (int): The length of the section.
+        index (int) (optional): Starting index of the section, zero-indexed. Defaults to 0.
+        
+        """
+        r = self.RANDOM(0, 255)
+        g = self.RANDOM(0, 255)
+        b = self.RANDOM(0, 255)
+        set_section_solid((r,g,b),length, int)
             
     def change_number_generator(random_generator: Callable(int, int)):
         """
