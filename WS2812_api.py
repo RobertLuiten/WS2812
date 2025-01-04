@@ -4,7 +4,7 @@ import rp2
 
 class WS2812:
     
-    """Implements the API for talking with the WS2812 RGB Light Strip."""
+    """Implements the MicroPython API for talking with the WS2812 RGB Light Strip."""
     
     def __init__(self, num_leds: int, pin_num: int, brightness: float =0.1, random_generator: Callable(int, int) = random.randint):
         """
@@ -13,16 +13,16 @@ class WS2812:
         Args:
         num_leds (int): The number of LEDs the light strip contains.
         pin_num (int): The pin number that the strip is connected to.
-        brightness (float) (optional): Sets the initial brightness of the light strip for a value between 0 and 1 (Defaults to 0.1).
+        BRIGHTNESS (float) (optional): Sets the initial BRIGHTNESS of the light strip for a value between 0 and 1 (Defaults to 0.1).
         random_generator (Callable(int, int)) (optional): The random number generator to use. Defaults to random.randint.
         
         """
         self.NUM_LEDS = num_leds
         self.PIN_NUM = pin_num
         self.RANDOM = random_generator
-        self.brightness = brightness
-        self.ar = array.array("I", [0 for _ in range(self.NUM_LEDS)])
-        self.sm = self._init_state_machine()
+        self.BRIGHTNESS = brightness
+        self.AR = array.array("I", [0 for _ in range(self.NUM_LEDS)])
+        self.SM = self._init_state_machine()
 
     def _init_state_machine(self):
         """Initialize the state of the light strip."""
@@ -40,29 +40,29 @@ class WS2812:
             nop()                   .side(0) [T2 - 1]
             wrap()
         
-        sm = rp2.StateMachine(0, ws2812, freq=8_000_000, sideset_base=Pin(self.PIN_NUM))
-        sm.active(1)
-        return sm
+        SM = rp2.StateMachine(0, ws2812, freq=8_000_000, sideset_base=Pin(self.PIN_NUM))
+        SM.active(1)
+        return SM
 
     def refresh(self):
         """Refreshes the current state of the light strip."""
         dimmer_ar = array.array("I", [0 for _ in range(self.NUM_LEDS)])
-        for i, c in enumerate(self.ar):
-            r = int(((c >> 8) & 0xFF) * self.brightness)
-            g = int(((c >> 16) & 0xFF) * self.brightness)
-            b = int((c & 0xFF) * self.brightness)
+        for i, c in enumerate(self.AR):
+            r = int(((c >> 8) & 0xFF) * self.BRIGHTNESS)
+            g = int(((c >> 16) & 0xFF) * self.BRIGHTNESS)
+            b = int((c & 0xFF) * self.BRIGHTNESS)
             dimmer_ar[i] = (g<<16) + (r<<8) + b
-        self.sm.put(dimmer_ar, 8)
+        self.SM.put(dimmer_ar, 8)
         
     def set_brightness(self, brightness: float):
         """
-        Changes the brightness of the light strip.
+        Changes the BRIGHTNESS of the light strip.
         
         Args:
-        brightness (float): A value between 0 and 1 representing the brightness of the light strip
+        BRIGHTNESS (float): A value between 0 and 1 representing the BRIGHTNESS of the light strip
         
         """
-        self.brightness = brightness
+        self.BRIGHTNESS = brightness
         self.refresh()
 
     def set_pixel(self, i: int, color: (int, int, int)):
@@ -74,7 +74,7 @@ class WS2812:
         color ((int, int, int)): RGB value tuple to set the strip to.
         
         """
-        self.ar[i] = (color[1]<<16) + (color[0]<<8) + color[2]
+        self.AR[i] = (color[1]<<16) + (color[0]<<8) + color[2]
         self.refresh()
         
     def set_pixel_off(self, i: int):
@@ -85,8 +85,7 @@ class WS2812:
         i (int): The pixel to turn off.
         
         """
-        self.ar[i] = 0
-        self.refresh()
+        self.set_pixel(i, (0,0,0))
         
     def set_pixel_random(self, i: int):
         """
@@ -109,7 +108,7 @@ class WS2812:
         color ((int, int, int)): RGB value tuple to set the strip to.
         
         """
-        for i in range(len(self.ar)):
+        for i in range(len(self.AR)):
             self.set_pixel(i, color)
         
     def set_all_off(self):
@@ -122,15 +121,15 @@ class WS2812:
         Fills the strip with random colors.
 
         """
-        for i in range(len(self.ar)):
+        for i in range(len(self.AR)):
             self.set_pixel_random(i)
             
-    def set_section(self, colors: List[Union[Tuple[int, int, int], None]], index: int = 0):
+    def set_section(self, colors: List[[(int, int, int), None]], index: int = 0):
         """
         Fills a section of the strip with given colors or random colors for None values.
         
         Args:
-        colors (List[Union[Tuple[int, int, int], None]]): Array of colors to set the section to, with None values indicating random colors.
+        colors (List[(int, int, int)], None]]): Array of colors to set the section to, with None values indicating random colors.
         index (int) (optional): Starting index of the section, zero-indexed. Defaults to 0.
         """
         for i, color in enumerate(colors):
@@ -139,12 +138,25 @@ class WS2812:
             else:
                 self.set_pixel(index + i, color)
                 
+    def set_section_solid(self, color: (int, int, int), length: int, index: int = 0):
+        """
+        Fills a section of the strip with random colors
+        
+        Args:
+        color ((int, int, int)): The color to set the section to.
+        length (int): The length of the section.
+        index (int) (optional): Starting index of the section, zero-indexed. Defaults to 0.
+        
+        """
+        for i in range(length):
+            self.set_pixel(index + i, color)
+                
     def set_section_random(self, length: int, index: int = 0):
         """
         Fills a section of the strip with random colors
         
         Args:
-        length (int): The length of the section to set to random colors.
+        length (int): The length of the section.
         index (int) (optional): Starting index of the section, zero-indexed. Defaults to 0.
         
         """
