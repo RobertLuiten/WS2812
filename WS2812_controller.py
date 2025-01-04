@@ -4,7 +4,7 @@ import rp2
 
 class WS2812:
     
-    """Implements the MicroPython API for talking with the WS2812 RGB Light Strip."""
+    """MicroPython Controller for talking with the WS2812 RGB Light Strip."""
     
     def __init__(self, num_leds: int, pin_num: int, brightness: float =0.1, random_generator: Callable(int, int) = random.randint):
         """
@@ -129,7 +129,7 @@ class WS2812:
         r = self.RANDOM(0, 255)
         g = self.RANDOM(0, 255)
         b = self.RANDOM(0, 255)
-        set_all_solid((r,g,b),length, int)
+        self.set_all_solid((r,g,b))
             
     def set_section(self, colors: List[[(int, int, int), None]], index: int = 0):
         """
@@ -193,3 +193,20 @@ class WS2812:
         
         """
         self.RANDOM = random_generator
+        
+    def get_pixel_color(self, i: int) -> (int, int, int):
+        """
+        Changes the random number generator the api utilizes.
+        
+        Args:
+        i (int): The number of the RGB to get the color from.
+        
+        Returns:
+        (int, int, int): (R,G,B) color representation
+        
+        """
+        color = self.AR[i]
+        r : int = ((color >> 8) & 0xFF)
+        g : int = ((color >> 16) & 0xFF)
+        b : int = (color & 0xFF)
+        return (r,g,b)
