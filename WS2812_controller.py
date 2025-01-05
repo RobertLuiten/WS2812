@@ -1,26 +1,25 @@
-import array, random
+import array, random, rp2
 from machine import Pin
-import rp2
 
 class WS2812:
     
     """MicroPython Controller for talking with the WS2812 RGB Light Strip."""
     
-    def __init__(self, num_leds: int, pin_num: int, brightness: float =0.1, random_generator: Callable(int, int) = random.randint):
+    def __init__(self, num_leds: int, pin_num: int, brightness: float = 0.1, random_generator: Callable(int, int) = random.randint):
         """
         Initialize the light strip.
 
         Args:
         num_leds (int): The number of LEDs the light strip contains.
         pin_num (int): The pin number that the strip is connected to.
-        BRIGHTNESS (float) (optional): Sets the initial BRIGHTNESS of the light strip for a value between 0 and 1 (Defaults to 0.1).
+        brightness (float) (optional): Sets the initial brightness of the light strip for a value between 0 and 1 (Defaults to 0.1).
         random_generator (Callable(int, int)) (optional): The random number generator to use. Defaults to random.randint.
         
         """
         self.NUM_LEDS = num_leds
         self.PIN_NUM = pin_num
         self.RANDOM = random_generator
-        self.BRIGHTNESS = brightness
+        self.BRIGHTNESS = array.array("d", [brightness for _ in range(self.NUM_LEDS)])
         self.AR = array.array("I", [0 for _ in range(self.NUM_LEDS)])
         self.SM = self._init_state_machine()
 
@@ -44,26 +43,15 @@ class WS2812:
         SM.active(1)
         return SM
 
-    def refresh(self):
-        """Refreshes the current state of the light strip."""
+    def update(self):
+        """Updates the current state of the light strip."""
         dimmer_ar = array.array("I", [0 for _ in range(self.NUM_LEDS)])
         for i, c in enumerate(self.AR):
-            r = int(((c >> 8) & 0xFF) * self.BRIGHTNESS)
-            g = int(((c >> 16) & 0xFF) * self.BRIGHTNESS)
-            b = int((c & 0xFF) * self.BRIGHTNESS)
+            r = int(((c >> 8) & 0xFF) * self.BRIGHTNESS[i])
+            g = int(((c >> 16) & 0xFF) * self.BRIGHTNESS[i])
+            b = int((c & 0xFF) * self.BRIGHTNESS[i])
             dimmer_ar[i] = (g<<16) + (r<<8) + b
         self.SM.put(dimmer_ar, 8)
-        
-    def set_brightness(self, brightness: float):
-        """
-        Changes the BRIGHTNESS of the light strip.
-        
-        Args:
-        BRIGHTNESS (float): A value between 0 and 1 representing the BRIGHTNESS of the light strip
-        
-        """
-        self.BRIGHTNESS = brightness
-        self.refresh()
 
     def set_pixel(self, i: int, color: (int, int, int)):
         """
@@ -75,7 +63,6 @@ class WS2812:
         
         """
         self.AR[i] = (color[1]<<16) + (color[0]<<8) + color[2]
-        self.refresh()
         
     def set_pixel_off(self, i: int):
         """
@@ -86,6 +73,17 @@ class WS2812:
         
         """
         self.set_pixel(i, (0,0,0))
+        
+    def set_pixel_brightness(self, i: int, brightness: float):
+        """
+        Changes the brightness of the light strip.
+        
+        Args:
+        i (int): The pixel to change the brightness of.
+        brightness (float): A value between 0 and 1 representing the new bightness for the pixel.
+        
+        """
+        self.BRIGHTNESS[i] = brightness
         
     def set_pixel_random(self, i: int):
         """
@@ -100,7 +98,7 @@ class WS2812:
         b = self.RANDOM(0, 255)
         self.set_pixel(i,(r, g, b))
         
-    def set_all_solid(self, color: (int, int, int)):
+    def set_all(self, color: (int, int, int)):
         """
         Sets all pixels to the same color.
         
@@ -113,8 +111,7 @@ class WS2812:
         
     def set_all_off(self):
         """Sets all lights in the strip to off."""
-        self.set_all_solid((0, 0, 0))
-        self.refresh()
+        self.set_all((0, 0, 0))
         
     def set_all_random(self):
         """
@@ -129,7 +126,7 @@ class WS2812:
         r = self.RANDOM(0, 255)
         g = self.RANDOM(0, 255)
         b = self.RANDOM(0, 255)
-        self.set_all_solid((r,g,b))
+        self.set_all((r,g,b))
             
     def set_section(self, colors: List[[(int, int, int), None]], index: int = 0):
         """
@@ -183,20 +180,10 @@ class WS2812:
         g = self.RANDOM(0, 255)
         b = self.RANDOM(0, 255)
         set_section_solid((r,g,b),length, int)
-            
-    def change_number_generator(random_generator: Callable(int, int)):
-        """
-        Changes the random number generator the api utilizes.
-        
-        Args:
-        random_generator (Callable(int, int)): The random number generator to use.
-        
-        """
-        self.RANDOM = random_generator
         
     def get_pixel_color(self, i: int) -> (int, int, int):
         """
-        Changes the random number generator the api utilizes.
+        Retrieves the color of a pixel.
         
         Args:
         i (int): The number of the RGB to get the color from.
@@ -210,3 +197,39 @@ class WS2812:
         g : int = ((color >> 16) & 0xFF)
         b : int = (color & 0xFF)
         return (r,g,b)
+    
+    def pixel_on(self, i: int) -> bool:
+        """
+        Determines whether a pixel is on or not.
+        
+        Args:
+        i (int): The pixel to check.
+        
+        Returns:
+        (bool): True if the pixel is off, false otherwise.
+        
+        """
+        return (self.get_pixel_color(i) != (0,0,0)) and self.get_pixel_brightness != 0
+    
+    def get_pixel_brightness(self, i: int) -> float:
+        """
+        Retrieves the brightness of a pixel.
+        
+        Args:
+        i (int): The number of the RGB to get the brightness from.
+        
+        Returns:
+        float: A value between 0 and 1 representing the pixel's brightness
+        
+        """
+        return self.BRIGHTNESS[i]
+    
+    def change_number_generator(random_generator: Callable(int, int)):
+        """
+        Changes the random number generator the controller utilizes.
+        
+        Args:
+        random_generator (Callable(int, int)): The random number generator to use.
+        
+        """
+        self.RANDOM = random_generatori
