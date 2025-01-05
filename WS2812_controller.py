@@ -53,7 +53,7 @@ class WS2812:
             dimmer_ar[i] = (g<<16) + (r<<8) + b
         self.SM.put(dimmer_ar, 8)
 
-    def set_pixel(self, i: int, color: (int, int, int)):
+    def set_pixel_color(self, i: int, color: (int, int, int)):
         """
         Sets a pixel to a color.
         
@@ -72,11 +72,11 @@ class WS2812:
         i (int): The pixel to turn off.
         
         """
-        self.set_pixel(i, (0,0,0))
+        self.set_pixel_color(i, (0,0,0))
         
     def set_pixel_brightness(self, i: int, brightness: float):
         """
-        Changes the brightness of the light strip.
+        Changes the brightness of the ith pixel.
         
         Args:
         i (int): The pixel to change the brightness of.
@@ -84,6 +84,18 @@ class WS2812:
         
         """
         self.BRIGHTNESS[i] = brightness
+        
+    def set_pixel_brightness_random(self, i: int, minB: float = 0, maxB: float = 1):
+        """
+        Sets a pixel to a random brightness.
+        
+        Args:
+        i (int): The pixel to set randomly.
+        minB (float) (optional): The minimum brightness to set the light to. Defaults to 0.
+        maxB (float) (optional): The maximum brightness to set the light to. Defaults to 1.
+        
+        """
+        self.BRIGHTNESS[i] = self.RANDOM(minB * 100, MaxB * 100) * 0.1
         
     def set_pixel_random(self, i: int):
         """
@@ -96,7 +108,7 @@ class WS2812:
         r = self.RANDOM(0, 255)
         g = self.RANDOM(0, 255)
         b = self.RANDOM(0, 255)
-        self.set_pixel(i,(r, g, b))
+        self.set_pixel_color(i,(r, g, b))
         
     def set_all(self, color: (int, int, int)):
         """
@@ -107,11 +119,46 @@ class WS2812:
         
         """
         for i in range(len(self.AR)):
-            self.set_pixel(i, color)
+            self.set_pixel_color(i, color)
         
     def set_all_off(self):
         """Sets all lights in the strip to off."""
         self.set_all((0, 0, 0))
+        
+    def set_all_brightness(self, brightness: float):
+        """
+        Changes the brightness of the light strip.
+        
+        Args:
+        brightness (float): A value between 0 and 1 representing the new bightness for the lightstrip.
+        
+        """
+        for i in range(len(self.BRIGHTNESS)):
+            self.BRIGHTNESS[i] = brightness
+            
+    def set_all_brightness_random(self, minB: float = 0, maxB: float = 1):
+        """
+        Sets all pixels in the light strip to random brightness.
+        
+        Args:
+        minB (float) (optional): The minimum brightness to set the light to. Defaults to 0.
+        maxB (float) (optional): The maximum brightness to set the light to. Defaults to 1.
+        
+        """
+        for i in range(len(self.BRIGHTNESS)):
+            self.set_pixel_brightness_random(i, minB, maxB)
+            
+    def set_all_brightness_random_solid(self, minB: float = 0, maxB: float = 1):
+        """Sets the light strip to a uniform random brightness.
+        
+        Args:
+        minB (float) (optional): The minimum brightness to set the light to. Defaults to 0.
+        maxB (float) (optional): The maximum brightness to set the light to. Defaults to 1.
+        
+        """
+        rand_bright = self.RANDOM(minB, Maxb) * 0.1
+        for i in range(len(self.BRIGHTNESS)):
+            self.BRIGHTNESS[i] = rand_bright
         
     def set_all_random(self):
         """
@@ -140,7 +187,19 @@ class WS2812:
             if color is None:
                 self.set_pixel_random(index + i)
             else:
-                self.set_pixel(index + i, color)
+                self.set_pixel_color(index + i, color)
+                
+    def set_section_off(self, length: int, index: int = 0):
+        """
+        Turns off a section of the strip.
+        
+        Args:
+        length (int): The length of the section.
+        index (int) (optional): Starting index of the section, zero-indexed. Defaults to 0.
+        
+        """
+        for i in range(length):
+            self.set_pixel_off(index + i)
                 
     def set_section_solid(self, color: (int, int, int), length: int, index: int = 0):
         """
@@ -153,7 +212,49 @@ class WS2812:
         
         """
         for i in range(length):
-            self.set_pixel(index + i, color)
+            self.set_pixel_color(index + i, color)
+            
+    def set_section_brightness(self, brightness: float, length: int, index: int = 0):
+        """
+        Sets the brightness for a section of the strip.
+        
+        Args:
+        brightness (float): The brightness to set the section to.
+        length (int): The length of the section.
+        index (int) (optional): Starting index of the section, zero-indexed. Defaults to 0.
+        
+        """
+        for i in range(length):
+            self.set_pixel_brightness(index + i, brightness)
+            
+    def set_section_brightness_random(self, length: int, index: int = 0, minB: float = 0, maxB: float = 1):
+        """
+        Randomly sets the brightness for pixels in a section.
+        
+        Args:
+        length (int): The length of the section.
+        index (int) (optional): Starting index of the section, zero-indexed. Defaults to 0.
+        minB (float) (optional): The minimum brightness to set the light to. Defaults to 0.
+        maxB (float) (optional): The maximum brightness to set the light to. Defaults to 1.
+        
+        """
+        for i in range(length):
+            self.set_pixel_brightness_random(i, minB, maxB)
+            
+    def set_section_brightness_random_solid(self, length: int, index: int = 0, minB: float = 0, maxB: float = 1):
+        """
+        Randomly sets the for pixels in a section to a uniform brightness.
+        
+        Args:
+        length (int): The length of the section.
+        index (int) (optional): Starting index of the section, zero-indexed. Defaults to 0.
+        minB (float) (optional): The minimum brightness to set the light to. Defaults to 0.
+        maxB (float) (optional): The maximum brightness to set the light to. Defaults to 1.
+        
+        """
+        rand_bright = self.RANDOM(minB * 100, maxB * 100) * 0.1
+        for i in range(length):
+            self.set_pixel_brightness(i, rand_bright)
                 
     def set_section_random(self, length: int, index: int = 0):
         """
